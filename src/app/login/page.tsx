@@ -1,103 +1,102 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.push('/dashboard')
-    })
-  }, [router])
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-  const handleAuth = async (e: any) => {
-    e.preventDefault()
-    setLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) alert(error.message)
-      else router.push('/dashboard')
+    if (error) {
+      setError(error.message);
     } else {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) alert(error.message)
-      else alert('Signup successful! Check your email for confirmation.')
+      router.push("/");
     }
+  };
 
-    setLoading(false)
-  }
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) setError(error.message);
+  };
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12">
-        <div className="bg-white p-10 rounded-2xl shadow-lg w-full max-w-md border border-gray-100">
-          <h1 className="text-3xl font-bold text-center text-[#1b4290] mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Your Account'}
-          </h1>
-          <p className="text-gray-600 text-center mb-8">
-            {isLogin
-              ? 'Sign in to access your Blockrise dashboard.'
-              : 'Join Blockrise and start tracking your properties today.'}
-          </p>
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#1b4290] to-[#2d58b5] text-white px-6">
+      <div className="bg-white text-gray-900 rounded-3xl shadow-2xl p-10 w-full max-w-md">
+        <h2 className="text-3xl font-bold text-center mb-6 text-[#1b4290]">
+          Log In / Sign Up
+        </h2>
 
-          <form onSubmit={handleAuth} className="space-y-5">
-            <div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1b4290]"
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1b4290]"
-              />
-            </div>
+        <form onSubmit={handleEmailLogin} className="space-y-4">
+          <div>
+            <label className="block mb-1 font-semibold">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1b4290]"
+            />
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#1b4290] text-white py-2 rounded-lg font-semibold hover:bg-[#16336e] transition"
-            >
-              {loading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
-            </button>
-          </form>
+          <div>
+            <label className="block mb-1 font-semibold">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1b4290]"
+            />
+          </div>
 
-          <p className="text-center text-sm text-gray-600 mt-6">
-            {isLogin ? "Don’t have an account?" : 'Already registered?'}{' '}
-            <span
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-[#1b4290] font-semibold cursor-pointer hover:underline"
-            >
-              {isLogin ? 'Sign up' : 'Log in'}
-            </span>
-          </p>
+          {error && (
+            <p className="text-red-500 text-sm text-center mt-2">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-[#1b4290] text-white py-2 rounded-lg font-semibold hover:bg-[#2d58b5] transition"
+          >
+            Log In
+          </button>
+        </form>
+
+        <div className="flex items-center my-6">
+          <hr className="flex-1 border-gray-300" />
+          <span className="px-3 text-gray-500 text-sm">or</span>
+          <hr className="flex-1 border-gray-300" />
         </div>
-      </main>
-      <Footer />
-    </>
-  )
+
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full bg-white border border-gray-300 py-2 rounded-lg flex items-center justify-center gap-3 font-semibold hover:bg-gray-100 transition"
+        >
+          <img
+            src="https://www.svgrepo.com/show/355037/google.svg"
+            alt="Google"
+            className="w-5 h-5"
+          />
+          Continue with Google
+        </button>
+      </div>
+    </main>
+  );
 }
