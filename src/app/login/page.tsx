@@ -22,7 +22,7 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/");
+      router.push("/dashboard"); // ✅ Redirect to dashboard
     }
   };
 
@@ -30,7 +30,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/dashboard`, // ✅ Redirect to deployed dashboard
       },
     });
 
